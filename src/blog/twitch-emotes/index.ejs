@@ -1,0 +1,376 @@
+
+<section class="article">
+  <div class="header">
+    <div class="header-left">
+      <h1>Counting Twitch Emotes</h1>
+      <div class="date">Posted JUN 28, 2017</div>
+    </div>
+    <div class="header-right">
+      <div class="tags">
+        <div class="tag">Elixir</div>
+        <div class="tag">IRC</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Introduction</h2>
+
+  <p>
+    Anyone who knows Twitch.tv, knows it's chat. Full of memes, <a href="//www.twitchquotes.com/copypastas?popular=true">copypastas</a>, spam and insults,
+    Twitch Chat is quite controversial. Some people find it repulsive, some love it, but I am always amazed
+    by the creativity of the creatures that live there. It is, in its own way quite chaotic
+    (like a <a href="/pendulum" target="_blank">pendulum</a>?). Without further ado, let's use
+    <a href="//elixir-lang.org/">Elixir</a> to access Twitch APIs and its IRC server, to observe
+    the strange world of the Twitch Chat. We will build a Kappa counter, which will display the top
+    channels by Kappa per minute. Follow me through this experiment, and you'll find at the end
+    the result, which will show you the best kappa channels in real-time!
+  </p>
+
+  <p class="text-center">
+    <img class="article" src="//static-cdn.jtvnw.net/emoticons/v1/25/1.0"></img>
+    <i class="img-subtitle">(The infamous Kappa icon)</i>
+  </p>
+
+  <h2>Elixir</h2>
+
+  <p>
+    In order to follow this experiment, you'll need some knowledge of Elixir. Recently, I have been playing with this language,
+    which is beautifully designed (and first of all fun!).
+    I am a Front-End developer, so everything that's shiny and new attracts me. Elixir is a functional programming language,
+    that targets the Erlang virtual machine. I do not
+    pretend to be expert enough to teach you the secrets of this tool, but <a href="//elixirschool.com/" target="_blank">here</a>
+    is a good start if you wish to learn more.
+  </p>
+
+  <p>
+    We will use the <a href="//github.com/bitwalker/exirc" target="_blank">ExIrc</a>
+    library to connect and interact with the Twitch IRC servers (as you guessed already).
+    In order to request the HTTP APIs, we will use the <a href="//github.com/edgurgel/httpoison" target="_blank">HTTPoison </a>
+    library, an HTTP client (you guessed this one too I bet).
+    And finally we need the <a href="//github.com/devinus/poison" target="_blank">Poison</a> library
+    which will let us parse JSON (this one is not guessable sorry).
+    These libraries are all written in Elixir, and are good sources to learn the language.
+  </p>
+
+  <h2>The Setup</h2>
+
+  <p>
+    I'll suppose you already have Elixir already installed. To create a new project, use the mix build tool (included with Elixir).
+    First, let's create a project called twitch_irc:
+  </p>
+  
+  <pre><code class="no-highlight">mix new twitch_irc --sup</code></pre>
+
+  <p>
+    The flag --sup means we need a supervisor, which will handle failures from our processes. Next, we need to add our dependencies.
+    This is what the mix.exs file looks like after adding them:
+  </p>
+
+  <pre class="elixir"><code class="elixir">defmodule TwitchIrc.Mixfile do
+  use Mix.Project
+
+  def project do
+    [app: :twitch_irc,
+      version: "0.1.0",
+      elixir: "~> 1.4",
+      build_embedded: Mix.env == :prod,
+      start_permanent: Mix.env == :prod,
+      deps: deps()]
+  end
+
+  # We need to add our dependencies as applications
+  def application do
+    [extra_applications: [:logger, :exirc, :httpoison],
+      mod: {TwitchIrc.Application, []}]
+  end
+
+  # Dependencies declaration
+  defp deps do
+    [{:exirc, "~> 1.0"}, {:httpoison, "~> 0.11"}, {:poison, "~> 3.1.0"}]
+  end
+end</code></pre>
+
+  <p>Then get your dependencies by typing:</p>
+
+  <pre><code class="no-highlight">mix deps.get</code></pre>
+
+  <p>We are now ready to work!</p>
+
+  <h2>Accessing the API</h2>
+
+  <p>
+    In order to count the emoticons, we first need to get the most viewed streams. Lets code
+    a module to get the top streams by viewers. This module does not define a process, but is only a collection
+    of functions.
+    First to access the APIs, you will need to have a Twitch account, to retrieve your Client ID.
+    You can read about the full process <a href="//dev.twitch.tv/docs/v5/guides/authentication/">here</a>.
+  </p>
+
+  <pre class="elixir"><code class="elixir">defmodule TwitchIrc.Api do
+  use HTTPoison.Base
+
+  @version "v5"
+  @base_url "https://api.twitch.tv/kraken"
+
+  # Headers Values
+  @client_id Application.get_env(:twitch_irc, :api_secret_token)
+  @accept_header_value "application/vnd.twitchtv.#{@version}+json"
+
+  # Helper, to request directly with the path
+  def process_url(url), do: @base_url <> url
+
+  # We need to add the Accept and Client-Id headers, as requested
+  # by the Twitch APIs
+  def process_request_headers(headers) do
+    new_headers = [{"Accept", @accept_header_value},
+                    {"Client-Id", @client_id}]
+    new_headers ++ headers
+  end
+
+  # We decode the JSON body for every requests
+  def process_response_body(body), do: Poison.decode!(body)
+
+  # Function to get the top streams from the API
+  def get_top_streams!(params \\ %{}) do
+    Map.fetch!(get!("/streams", [], params: params).body, "streams")
+  end
+
+  # Function to get the top channels from the top streams
+  def get_top_channels!(params \\ %{}) do
+    params
+    |> get_top_streams!
+    |> Enum.map(fn stream -> Map.fetch!(stream, "channel") end)
+  end
+end</code></pre>
+
+  <p>
+    This snippet is the code of the Elixir module which will let us access the Twitch APIs.
+    As you can see, it <a href="//elixir-lang.org/getting-started/alias-require-and-import.html#use" target="_blank">uses</a>
+    <a href="//github.com/edgurgel/httpoison#wrapping-httpoisonbase" target="_blank">HTTPPoison.Base</a>,
+    which let's us build easily a Twitch API client. Did you notice I retrieved my Client-Id using
+    <code class=" hightlight inline-code elixir">Application.get_env(:twitch_irc, :api_secret_token)</code> ?
+    It comes from the config.exs file generated when you created your project with Mix.
+    You can already try this module, by firing up Elixir’s interactive shell by typing
+    <code class="inline-code">iex -S mix</code>.
+    You can then execute functions from this module, by typing for example
+    <code class="inline-code elixir">TwitchIrc.Api.get_top_channels!()</code>
+    which should show you the top channels by viewers (by default the top 25). We successfully accessed the APIs,
+    now let's connect to the IRC servers, and count the Kappas!
+  </p>
+
+  <h2>The Chat</h2>
+
+  <p>
+    Let's use ExIrc to connect to the Twitch IRC servers. The first thing
+    you need to do is to retrieve your account oauth token, and add it to your config.exs file
+    (here as <code class="inline-code elixir">oauth_access_token</code>). You can use this handy
+    <a href="//twitchapps.com/tmi/" target="_blank">website</a> to get it. Add it to your config.exs file. Next we need to modify
+    our <a href="//hexdocs.pm/elixir/Supervisor.html" target="_blank">Supervisor</a>.
+    We need to add the ExIrc client, and a <a href="//hexdocs.pm/elixir/GenServer.html" target="_blank">GenServer </a>
+    which will act as a handler. We just need to add them as workers in our supervisor:
+  </p>
+
+  <pre class="elixir"><code class="elixir">defmodule TwitchIrc.Application do
+  use Application
+
+  def start(_type, _args) do
+    import Supervisor.Spec, warn: false
+
+    children = [
+      # Workers we added
+      # First the ExIrc Client
+      worker(ExIrc.Client, [[], [name: :irc_client]]),
+      # And our GenServer handler
+      worker(TwitchIrc.Irc, []),
+    ]
+
+    opts = [strategy: :one_for_one, name: TwitchIrc.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+end</code></pre>
+
+  <p>One you've added them, let's write our handler:</p>
+
+  <pre class="elixir"><code class="elixir">defmodule TwitchIrc.Irc do
+  use GenServer
+
+  alias TwitchIrc.Api
+
+  # All the necessary config properties to connect to the IRC server
+  @host Application.get_env(:twitch_irc, :irc_host)
+  @port Application.get_env(:twitch_irc, :irc_port)
+  @pass "oauth:" <> Application.get_env(:twitch_irc, :oauth_access_token)
+  @name Application.get_env(:twitch_irc, :irc_name)
+
+  # The regex to find Kappas
+  @kappa_regex Regex.compile!("\\bKappa\\b")
+
+  # The state of our GenServer
+  defmodule State do
+    defstruct channels: MapSet.new(),
+              channels_kappas: Map.new()
+  end
+
+  def start_link(state \\ %State{}) do
+    GenServer.start_link(__MODULE__, state, name: __MODULE__)
+  end
+
+  # We add this GenServer as a ExIrc handler, and try to connect  
+  def init(state) do
+    ExIrc.Client.add_handler(:irc_client, self())
+    ExIrc.Client.connect_ssl!(:irc_client, @host, @port)
+    {:ok, state}
+  end
+
+  # Once we are connected, let's logon
+  def handle_info({:connected, _server, _port}, state) do
+    ExIrc.Client.logon(:irc_client, @pass, @name, @name, @name)
+    {:noreply, state}
+  end
+
+  # Once logged in, let's follow the top channels!
+  def handle_info(:logged_in, state) do
+    send(self(), :get_top_channels)
+    {:noreply, state}
+  end
+end</code></pre>
+
+  <p>
+    This is a simple GenServer. It will use ExIrc to connect, and finally, once logged in, will call
+    <code class="inline-code elixir">:get_top_channels</code> We haven't defined it yet, so let's do it.
+    The following code is added to the same module, our GenServer. It will retrieve the top channels
+    every 5 seconds, join the new ones, and leave the old ones on IRC, so that we are always in sync with the top.
+  </p>
+
+  <pre class="elixir"><code class="elixir"># Callback called after the logon
+def handle_info(:get_top_channels, state) do
+  # We get the top 100 channels from the API
+  top_channels =
+    %{"limit" => 100}
+    |> Api.get_top_channels!
+    |> Enum.map(fn channel -> channel["name"] end)
+    |> MapSet.new
+
+  # We need to join and leave the new and old channels
+  join_channels(top_channels, state.channels)
+  part_channels(top_channels, state.channels)
+
+  # Let's do the same thing again, but 5 seconds later
+  schedule(:get_top_channels, 5 * 1000)
+
+  {:noreply, state}
+end
+
+defp join_channels(top_channels, channels) do
+  channels_to_join = MapSet.difference(top_channels, channels)
+
+  # For each channel to join, call the corresponding ExIrc command
+  Enum.each(channels_to_join, fn channel -> 
+    ExIrc.Client.join(:irc_client, "#" <> channel)
+  end)
+end
+
+defp part_channels(top_channels, channels) do
+  channels_to_part = MapSet.difference(channels, top_channels)
+
+  # For each channel to part, call the corresponding ExIrc command
+  Enum.each(channels_to_part, fn channel ->
+    ExIrc.Client.part(:irc_client, "#" <> channel)
+  end)
+end
+
+def handle_info({:joined, "#" <> channel}, state) do
+  # We update the state, by adding the channel we are in,
+  # and setting to a default value the kappas received
+  channels = MapSet.put(state.channels, channel)
+  channels_kappas = Map.put(state.channels_kappas, channel, [])
+
+  {:noreply, %{state | channels: channels, channels_kappas: channels_kappas}}
+end
+
+def handle_info({:parted, "#" <> channel}, state) do
+  # We update the state, by deleting the data we add of that channel
+  channels = MapSet.delete(state.channels, channel)
+  channels_kappas = Map.delete(state.channels_kappas, channel)
+
+  {:noreply, %{state | channels: channels, channels_kappas: channels_kappas}}
+end
+
+# Helper to repeat a task
+defp schedule(action, timeout_seconds) do
+  Process.send_after(self(), action, timeout_seconds)
+end
+</code></pre>
+
+  <p>
+    We now have everything we need! We just need to handle the message reception. I did not talk in depth
+    of the State module we added to our GenServer. The first attribute is <code class="inline-code elixir">channels</code>,
+    which holds the channels we are currenly in. The second one, <code class="inline-code elixir">channels_kappas</code>,
+    holds per channel a list of kappas we received. Each element is a tuple which has the count of kappas in a message for first element,
+    and the timestamp of the message for second element. We need the timestamp to clean the old messages.
+    Let's add the last bit of code:
+  </p>
+
+  <pre class="elixir"><code class="elixir"># Callback called when a message is received
+def handle_info({:received, message, _sender_info, "#" <> channel}, state) do
+  # We capture all the Kappas
+  kappa_captures = Regex.scan(@kappa_regex, message)
+
+  if Enum.is_empty?(kappa_captures) do
+    # No Kappa, nothing to do!
+    {:noreply, state}
+  else
+    # This is our new channels_kappas element, with the total of Kappas found,
+    # and the timestamp
+    channel_kappa = {Enum.count(kappa_captures), :os.system_time(:second)}
+
+    # We add it to our state, and clean the old ones
+    channels_kappas =
+      Map.update!(state.channels_kappas, channel, fn channel_kappas ->
+        [channel_kappa | channel_kappas]
+        |> Enum.reject(fn {_kappa_count, time} ->
+              time < :os.system_time(:second) - 60
+            end)
+      end)
+
+    # We return with the state updated
+    {:noreply, %{state | channels_kappas: channels_kappas}}
+  end
+end</code></pre>
+  <p>
+    We now have a GenServer process which holds all the Kappas received in the last minute
+    (since the last received). With a bit of more work, and some websocket magic, I present
+    you my result.
+  </p>
+
+  <h2>The Result</h2>
+
+  <p id="twitch-emotes-article"></p>
+
+  <p>
+    This is real-time (well soft real-time), refreshed every second. I have added to our GenServer the last message
+    from the channel containing a Kappa (in the middle of the table). In order to create the websocket server,
+    I have used the <a href="//github.com/ninenines/cowboy" target="_blank">Cowboy</a> library, a HTTP
+    and WebSocket library, written in Erlang, and extremely easy to use. If you want to read the final code, you can
+    <a href="//github.com/claisne/twitch_irc">here</a>.
+  </p>
+
+  <p>
+    As always I hope you learned some things while reading this post. See you soon for an other experiment!
+  </p>
+
+  <div class="addendum">
+    <h2>Addendum</h2>
+
+    <p>
+      As you may have seen, our code does not handle properly when users want to use emotes starting by Kappa. Indeed our detection
+      is simply based on a regex. Twitch appends emotes positions and IDs when sending an IRC message using the
+      <a href="//ircv3.net/specs/core/message-tags-3.2.html" target="_blank">IRCv3 Message Tags Capability</a>, as you can read about it
+      <a href="//dev.twitch.tv/docs/v5/guides/irc/#privmsg-twitch-tags" target="_blank">here</a>. Sadly ExIrc does not support
+      IRCv3 extensions. If I have any time or a brave coder comes along, a pull request to ExIrc to handle IRCv3 extensions would
+      solve our problem!
+    </p>
+  </div>
+
+<%= require('../disqus.ejs')() %>
+</section>

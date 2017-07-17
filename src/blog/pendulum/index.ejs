@@ -1,0 +1,191 @@
+
+<section class="article">
+  <div class="header">
+    <div class="header-left">
+      <h1>Double pendulum animation</h1>
+      <div class="date">Posted JUN 21, 2017</div>
+    </div>
+    <div class="header-right">
+      <div class="tags">
+        <div class="tag">JS</div>
+        <div class="tag">Maths</div>
+        <div class="tag">Canvas</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Introduction</h2>
+
+  <p>
+    Having been a front-end developer for quite some time, I <i class="ion-md-heart"></i> canvas animations, they're one of my favourite things to code.
+    It’s simple, you do not have to bother about frameworks,
+    architecture, and all the stuff that takes away the fun in coding (JavaScript fatigue anyone ?). Recently, I decided
+    to create a personal website (you are reading it right now!), and wanted to build an
+    animation on its front page. My mind wandering to find inspiration, I remembered a
+    video that recently fascinated me. Youtube user "Make Anything" 3D-printed a double
+    pendulum, attached a light to it, and filmed the whole thing. The result was so beautiful
+    and <a href="//en.wikipedia.org/wiki/Double_pendulum#Chaotic_motion" target="_blank">chaotic</a>, that I decided that this would be my next animation.
+  </p>
+
+  <div class="embed-wrapper">
+    <div class="embed-container">
+      <iframe src="//www.youtube.com/embed/hXOEoH5q3Hw?rel=0&amp;showinfo=0&amp;start=120" frameborder="0"></iframe>
+    </div>
+  </div>
+
+
+  <h2>A bit of maths</h2>
+
+  <img class="article" src="/img/pendulum.svg" />
+
+  <p>
+    To be honest, I would not be able to find the differential equations for this system. If you want to
+    read about the tools used to solve it you can, <a href="//sophia.dtp.fmph.uniba.sk/~kovacik/doublePendulum.pdf" target="_blank">here</a>. Let's suppose
+    we are all able to solve it, and let's write the equations which describe the system.
+  </p>
+
+  <div class="equations-block">
+    <div id="equations_1" class="equation"></div>
+    <div id="equations_2" class="equation"></div>
+  </div>
+
+  <p>
+    In order to find the value of <span id="equations_3"></span> and <span id="equations_4"></span>
+    we need to integrate the equations above. As far as I know, no analytic form can be found, and we need
+    to approximate the integration. One can use multiple methods, but here I went for simplicity, and used a simple
+    <a href="//en.wikipedia.org/wiki/Euler_method" target="_blank">Euler method</a>.
+  </p>
+
+  <div class="equations-block">
+    <div id="equations_5" class="equation"></div>
+    <div id="equations_6" class="equation"></div>
+  </div>
+
+  <h2>The code</h2>
+  <p>
+    To begin, lets code the computation of the angles of the pendulum. We first need to translate the
+    equations into JavaScript code. A bit cumbersome, but necessary.
+    <pre class="javascript"><code class="javascript">// th1 and th2 are the thetas
+// th1d and th2d are the derivates of th1 and th2
+
+// Acceleration of theta1
+function th1a(th1, th2, th1d, th2d) {
+  var n1 = m2 * l1 * th1d * th1d * sin(th2 - th1) * cos(th2 - th1);
+  var n2 = m2 * g * sin(th2) * cos(th2 - th1);
+  var n3 = m2 * l2 * th2d * th2d * sin(th2 - th1);
+  var n4 = - m * g * sin(th1);
+
+  var d = (m * l1) - m2 * l1 * cos(th2 - th1) * cos(th2 - th1);
+
+  return (n1 + n2 + n3 + n4) / d;
+}
+
+// Acceleration of theta2
+function th2a(th1, th2, th1d, th2d) {
+  var n1 = - m2 * l2 * th2d * th2d * sin(th2 - th1) * cos(th2 - th1);
+  var n2 = m * (g * sin(th1) * cos(th2 - th1) - l1 * th1d * th1d * sin(th2 - th1) - g * sin(th2));
+
+  var d = (m * l2) - m2 * l2 * cos(th2 - th1) * cos(th2 - th1);
+
+  return (n1 + n2) / d;
+}</code></pre>
+  </p>
+  <p>
+    Next we need to code a loop, which will compute the thetas (using Euler's method), and draw the pendulum on the canvas. For the loop
+    I used <a href="//github.com/chrisdickinson/raf">raf</a>, a polyfill to <a href="//developer.mozilla.org/docs/Web/API/Window/requestAnimationFrame">requestAnimationFrame</a>.
+    <pre class="javascript"><code>// Initial values chosen randomly
+
+// th1 and th2 are the thetas
+var th1 = Math.random() * 2 * pi;
+var th2 = Math.random() * 2 * pi;
+
+// th1d and th2d are the derivates of th1 and th2
+var th1d = (Math.random() - 0.5) * 2;
+var th2d = (Math.random() - 0.5) * 2;
+
+// requestAnimationFrame loop
+raf(function tick() {
+  // dt is chosen empirically
+  var dt = 0.01;
+
+  // Euler method
+  th1d += th1a(th1, th2, th1d, th2d) * dt;
+  th2d += th2a(th1, th2, th1d, th2d) * dt;
+
+  th1 += th1d * dt;
+  th2 += th2d * dt;
+
+  updateCanvas(th1, th2);
+
+  raf(tick);
+});</code></pre>
+  </p>
+  <p>
+    Now, the only thing left to code is the canvas code to display our pendulum (the updateCanvas function).
+    You will need to have a canvas element in your HTML, with the ID "animation".
+    <pre class="javascript"><code class="javascript">var canvas = document.getElementById('animation');
+var context = canvas.getContext('2D');
+
+function drawCircle(x, y) {
+  context.beginPath();
+  context.arc(x, y, 5, 0, 2 * Math.PI, false);
+  context.fill();
+}
+
+function drawPendulum(x1, y1, x2, y2) {
+  context.beginPath();
+  context.moveTo(width / 2, height / 2);
+  context.lineTo(x1, y1);
+  context.lineWidth = 1;
+  context.stroke();
+
+  context.beginPath();
+  context.moveTo(x1, y1);
+  context.lineTo(x2, y2);
+  context.lineWidth = 1;
+  context.stroke();
+
+  drawCircle(x1, y1);
+  drawCircle(x2, y2);
+}
+
+// the drawing function
+function updateCanvas(th1, th2) {
+  drawPendulum(th1ToX(th1), th1ToY(th1), th2toX(th2), th2ToY(th2));
+}</code></pre>
+  </p>
+  <p>
+    We did not talked about the th1To(X/Y) end th2To(X/Y) functions right?
+    These functions translate thetas to their coordinates in the canvas. Here is the last snippet of code.
+    <pre class="javascript"><code class="javascript">// We need the width and height of the canvas
+var width = canvas.offsetWidth;
+var height = canvas.offsetHeight;
+
+// The width and height of the canvas will allow us
+// to position the pendulum at the center.
+function th1ToX(th1) {
+  return width / 2 - sin(th1) * l1; 
+}
+
+function th1ToY(th1) {
+  return height / 2 + cos(th1) * l1;
+}
+
+function th2ToX(th1, th2) {
+  return th1ToX(th1) - sin(th2) * l2;
+}
+
+function th2ToY(th1, th2) {
+  return th1ToY(th1) + cos(th2) * l2;
+}</code></pre>
+  </p>
+  <h2>The Result</h2>
+  <canvas id="pendulum-article"></canvas>
+  <p>
+    I hope you learned some things while reading this post!
+    You can find a more colorful animation on the home page of this website, <a href="/">here</a>.
+    You can find the full code <a href="//github.com/claisne/claisne.github.io/blob/master/js/pendulum.js">here</a>.
+  </p>
+
+<%= require('../disqus.ejs')() %>
+</section>

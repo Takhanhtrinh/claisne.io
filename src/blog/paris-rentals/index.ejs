@@ -1,0 +1,305 @@
+
+<section class="article">
+  <div class="header">
+    <div class="header-left">
+      <h1>Paris Apartments Rental Ads</h1>
+      <div class="date">Posted JUL 03, 2017</div>
+    </div>
+    <div class="header-right">
+      <div class="tags">
+        <div class="tag">Go</div>
+        <div class="tag">Sql</div>
+        <div class="tag">Stats</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Introduction</h2>
+
+  <p>
+    Recently, I have been looking for an appartment to rent in Paris. Knowing close to nothing to this market,
+    I decided to channel the super-powers that only software developpers can hold (reponsibly of course),
+    to retrieve all the advertisements from the biggest french real estate portal,
+    <a href="//seloger.com" target="_blank">seloger.com</a>.
+    Let's study how the rental
+    real-estate market works in Paris, (which quite specific, I know) and try to extract some signal.
+    To scrape the data, I'll use the Go language. All the maps are rendered thanks to
+    <a href="//mapbox.com">mapbox</a> and <a href="//leaflet.js.com">Leafleft</a> using the
+    <a href="//openstreetmap.org">OpenStreetMap</a> data, and the
+    charts are made thanks to <a href="//d3js.org" target="_blank">D3.js</a> (all hail Mike Bostock).
+  </p>
+
+  <p>
+    The study will be based on two snapshots that I have made. One from the 03 Jun, and the other 07 Jun.
+    This article is divided in two parts. The first one is the analysis of the data, and second one details
+    how I scraped the data, which is a bit more technical.
+  </p>
+
+  <h2>The Geographical Analysis</h2>
+
+  <p>
+    In order to get a first peek of our data, lets split our advertisements by
+    <a href="//en.wikipedia.org/wiki/Arrondissements_of_Paris">arrondissement</a> (administrative districts of Paris),
+    and display averages from our data:
+  </p>
+
+  <div class="map-container">
+    <div class="map-header">
+      <div id="map-control-03" class="map-control-title map-control-title-selected">Jun 03 Snapshot</div>
+      <div id="map-control-07" class="map-control-title">Jun 07 Snapshot</div>
+    </div>
+    <div id="map-1" class="map"></div>
+    <div class="map-controls">
+      <div class="map-control-title">Per arrondissement</div>
+      <div id="map-control-price-surface" class="map-control">Price per Surface (€/month/m²)</div>
+      <div id="map-control-price" class="map-control">Price (€/month)</div>
+      <div id="map-control-surface" class="map-control">Surface (m²)</div>
+      <div id="map-control-count" class="map-control">Ads Count</div>
+    </div>
+  </div>
+
+  <p>
+    From that map several obvious observations can me made. The highest prices per surface can be found
+    at the center of Paris (as expected), and a bit higher towards the west of Paris. A bit more surprising,
+    big surfaces can be also be found at the center in Paris. Indeed, one would think that higher prices
+    would drive the market to create smaller appartment surfaces.
+  </p>
+
+  <h2>The Temporal Analysis</h2>
+
+  <p>
+    From our two snapshots, which are 3 days apart, we can study how prices change. Indeed, the portal we
+    retrieved the data has a unique ID by ad, which we can then use to join the data between these
+    two snapshots.
+  </p>
+
+  <p>
+    In 3 days, 1931 ads were closed, and 1900 were created (a lot!), which let us with 6986 ads left.
+    Out of these 6986 ads still present, 294 of them changed their prices
+    (4% of them, quite a lot). Can you guess the average percentage of change out of the changing ones ?
+    The answer is -6.70 % ! That's huge isn't it ? A lot of owners may try at first to price higher than the
+    market, and then lower their prices when demand is not there.
+  </p>
+
+  <h2>The Price Analysis</h2>
+
+  <p>
+    Can you guess how price per surface is distributed ? Your safest guess would be some kind of
+    Gaussian distribution, and you would be almost right! Les display the number of ads per price/surface:
+  </p>
+
+  <div id="price-distribution-container" class="graph-container">
+    <svg id="price-distribution-visualization" class="graph"></svg>
+  </div>
+
+  <h2>The Scraping</h2>
+
+  <p>
+    seloger.com, as any decent real-estate portal, offers a mobile application, which means their developpers
+    also built a HTTP API to access their data. Which is great, since it means we do not have to scrape the
+    website directly. Their API is a bit unconventional, as their resources attributes are in french,
+    only returning XML data and totally public. The only endpoint I found is located at
+    <a href="//ws.seloger.com/search.xml">ws.seloger.com/search.xml</a>. This endpoint, as you guessed it,
+    lets you search by criteria (postal code, product type, transaction type, minimum surface, and max surface),
+    over their full listing.
+  </p>
+  <p>
+    By clicking this
+    <a href="http://ws.seloger.com/search.xml?cp=75006&idtt=1&idtypebien=1" target="_blank">link</a>, you can read an example
+    of result from the API. The only difficulty we encounter, is that when your criteria is not constraining enough, the
+    number or results found by the server will be greater than what it will allow to display. Indeed, the server will only paginate
+    up to 50 results, over 4 pages maximum. To retrieve all the data, we will need to iterate throught he listing, filtering enough
+    so that for every request, the matching advertisements are not over 200. Let's start to code our scraper:
+  </p>
+
+  <pre class="go"><code class="go">// Convenience struct to request easily
+type searchRequest struct {
+  PostalCode      int
+  ProductType     int
+  TransactionType int
+  SurfaceMin      int
+  SurfaceMax      int
+  SearchPage      int
+}
+
+// Convenience function to encode the request as GET paramss
+func (request searchRequest) encode() string {
+  query := url.Values{}
+  
+  // We only encode if the attributes are not holding the default values
+
+  if request.PostalCode != 0 {
+    query.Set("cp", strconv.Itoa(request.PostalCode))
+  }
+
+  if request.ProductType != 0 {
+    query.Set("idtypebien", strconv.Itoa(request.ProductType))
+  }
+
+  if request.TransactionType != 0 {
+    query.Set("idtt", strconv.Itoa(request.TransactionType))
+  }
+
+  if request.SurfaceMin != 0 {
+    query.Set("surfacemin", strconv.Itoa(request.SurfaceMin))
+  }
+
+  if request.SurfaceMax != 0 {
+    query.Set("surfacemax", strconv.Itoa(request.SurfaceMax))
+  }
+
+  if request.SearchPage != 0 {
+    query.Set("SEARCHpg", strconv.Itoa(request.SearchPage))
+  }
+
+  return query.Encode()
+}
+
+var httpClient = &http.Client{
+  Timeout: time.Second * 10,
+}
+
+func search(request searchRequest) (*searchResult, error) {
+  searchURL := url.URL{
+    Scheme:   "http",
+    Host:     host,
+    Path:     "search.xml",
+    RawQuery: request.encode(),
+  }
+
+  resp, err := httpClient.Get(searchURL.String())
+  if err != nil {
+    return nil, err
+  }
+  defer resp.Body.Close()
+
+  searchResult := searchResult{}
+  err = xml.NewDecoder(resp.Body).Decode(&searchResult)
+  return &searchResult, err
+}</code></pre>
+
+  <p>
+    This first snippet contains the function and the struct which let us request the API. We still need to
+    define the searchResult struct, which will contains the response from the server, after parsing.
+    It is a bit cumbersome, as we need to write all the attributes we receive:
+  </p>
+
+  <pre class="go"><code class="go">// Advertisement according the the seloger API
+type Advertisement struct {
+  ID                   int     `xml:"idAnnonce" db:"id"`
+  AgencyID             int     `xml:"idAgence" db:"agency_id"`
+  PublicationID        int     `xml:"idPublication" db:"publication_id"`
+  TransactionTypeID    int     `xml:"idTypeTransaction" db:"transaction_type_id"`
+  Type                 int     `xml:"idTypeBien" db:"type"`
+  RefreshDate          string  `xml:"dtFraicheur" db:"refresh_date"`
+  CreationDate         string  `xml:"dtCreation" db:"creation_date"`
+  Title                string  `xml:"titre" db:"title"`
+  Label                string  `xml:"libelle" db:"label"`
+  Proximity            string  `xml:"proximite" db:"proximity"`
+  Description          string  `xml:"descriptif" db:"description"`
+  Price                float64 `xml:"prix" db:"price"`
+  PriceUnit            string  `xml:"prixUnite" db:"price_unit"`
+  PriceDescription     string  `xml:"prixMention" db:"price_description"`
+  RoomCount            string  `xml:"nbPiece" db:"room_count"`
+  BedroomCount         string  `xml:"nbChambre" db:"bedroom_count"`
+  Surface              float64 `xml:"surface" db:"surface"`
+  SurfaceUnit          string  `xml:"surfaceUnite" db:"surface_unit"`
+  CountryID            int     `xml:"idPays" db:"country_id"`
+  Country              string  `xml:"pays" db:"country"`
+  PostalCode           int     `xml:"cp" db:"postal_code"`
+  InseeCode            int     `xml:"codeInsee" db:"insee_code"`
+  City                 string  `xml:"ville" db:"city"`
+  PermaLink            string  `xml:"permaLien" db:"perma_link"`
+  Latitude             float64 `xml:"latitude" db:"latitude"`
+  Longitude            float64 `xml:"longitude" db:"longitude"`
+  CoordinatesPrecision string  `xml:"llPrecision" db:"coordinates_precision"`
+  DPEType              string  `xml:"typeDPE" db:"dpe_type"`
+  BathroomCount        string  `xml:"nbsallesdebain" db:"bathroom_count"`
+  ToiletCount          string  `xml:"nbtoilettes" db:"toilet_count"`
+  ConstructionYear     string  `xml:"anneeconstruct" db:"construction_year"`
+  ParkingsCount        string  `xml:"nbparkings" db:"parkings_count"`
+  HasPatio             string  `xml:"siterrasse" db:"patio"`
+  HasSwimmingPool      string  `xml:"sipiscine" db:"has_swimming_pool"`
+}
+
+// searchResult holds the data sent after requesting
+type searchResult struct {
+  Summary               string          `xml:"resume"`
+  SummaryWithoutSorting string          `xml:"resumeSansTri"`
+  FoundCount            string          `xml:"nbTrouvees"`
+  DisplayableCount      string          `xml:"nbAffichables"`
+  CurrentPage           string          `xml:"pageCourante"`
+  MaxPage               string          `xml:"pageMax"`
+  PreviousPageURL       string          `xml:"pagePrecedente"`
+  NextPageURL           string          `xml:"pageSuivante"`
+  Advertisements        []Advertisement `xml:"annonces>annonce"`
+}</code></pre>
+
+  <p>
+    The last thing to code is the scanning function, which will slice the criteria in order to get less than 200 results
+    for each request.
+  </p>
+
+  <pre class="go"><code class="go">func scan(postalCodes []int) (advertisements []Advertisement) {
+    // We iterate through the postal codes
+  for i, postalCode := range postalCodes {
+    log.Printf("Scanning %d (%d/%d)\n", postalCode, i, len(postalCodes))
+
+    req := searchRequest{
+      PostalCode:      postalCode,
+      ProductType:     ProductTypeAppartment,
+      TransactionType: TransactionTypeRental,
+    }
+
+    // We slice by surface, so we get less than 200 ads matching
+    for surface := 0; surface < surfaceMax; surface += surfaceStep {
+      req.SearchPage = 1
+      req.SurfaceMin = surface
+      req.SurfaceMax = surface + surfaceStep - 1
+
+      // If we hit the max surface, we remove the upper limit
+      if surface+surfaceStep >= surfaceMax {
+        req.SurfaceMax = 0
+      }
+
+      // We iterate through the pages
+      for {
+        res, err := search(req)
+        if err != nil {
+          log.Fatal(err)
+        }
+
+        advertisements = append(advertisements, res.Advertisements...)
+
+        // if we do not have a next page, break the loop
+        if res.NextPageURL == "" {
+          break
+        }
+
+        req.SearchPage++
+      }
+    }
+  }
+
+  return
+}
+
+// We just write the postal codes of Paris
+func scanParis() []Advertisement {
+  return scan([]int{
+    75001, 75002, 75003, 75004, 75005,
+    75006, 75007, 75008, 75009, 75010,
+    75011, 75012, 75013, 75014, 75015,
+    75016, 75116, 75017, 75018, 75019,
+    75020,
+  })
+}
+</code></pre>
+
+  <p>
+    That's it! now we are able to scan all the ads we need from the portal. This scan function only request appartments to rent.
+    The final code is available here. You can also dowload the scraped data.csv.
+  </p>
+
+<%= require('../disqus.ejs')() %>
+</section>
