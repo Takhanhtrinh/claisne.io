@@ -16,7 +16,7 @@ const g = 10;
 class Animation {
   constructor(canvas, options) {
     this.canvas = canvas;
-    this.options = options;
+    this.options = options || {};
 
     autoBind(this);
 
