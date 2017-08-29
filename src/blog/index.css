@@ -747,3 +747,9 @@ img.article {
     border-right: none;
   }
 }
+
+@media screen and (max-width: 500px) {
+  .graph {
+    height: 300px;
+  }
+}

@@ -17,14 +17,14 @@
   <h2>Introduction</h2>
 
   <p>
-    Recently, I have been looking for an appartment to rent in Paris. Knowing close to nothing to this market,
+    Recently, I have been looking for an appartment to rent in Paris. Knowing close to nothing about this market,
     I decided to channel the super-powers that only software developpers can hold (reponsibly of course),
     to retrieve all the advertisements from the biggest french real estate portal,
     <a href="//seloger.com" target="_blank">seloger.com</a>.
     Let's study how the rental
-    real-estate market works in Paris, (which quite specific, I know) and try to extract some signal.
+    real-estate market works in Paris, (which is quite specific, I know) and try to get a clearer look.
     To scrape the data, I'll use the Go language. All the maps are rendered thanks to
-    <a href="//mapbox.com">mapbox</a> and <a href="//leaflet.js.com">Leafleft</a> using the
+    <a href="//mapbox.com">mapbox</a> and <a href="//leaflet.js.com">Leafleft</a> using
     <a href="//openstreetmap.org">OpenStreetMap</a> data, and the
     charts are made thanks to <a href="//d3js.org" target="_blank">D3.js</a> (all hail Mike Bostock).
   </p>
@@ -38,7 +38,7 @@
   <h2>The Geographical Analysis</h2>
 
   <p>
-    In order to get a first peek of our data, lets split our advertisements by
+    In order to get a first peek at our data, let's split our advertisements by
     <a href="//en.wikipedia.org/wiki/Arrondissements_of_Paris">arrondissement</a> (administrative districts of Paris),
     and display averages from our data:
   </p>
@@ -60,7 +60,7 @@
 
   <p>
     From that map several obvious observations can me made. The highest prices per surface can be found
-    at the center of Paris (as expected), and a bit higher towards the west of Paris. A bit more surprising,
+    at the center of Paris (as expected), and a bit higher towards the west of Paris. A bit more surprisingly,
     big surfaces can be also be found at the center in Paris. Indeed, one would think that higher prices
     would drive the market to create smaller appartment surfaces.
   </p>
@@ -69,23 +69,23 @@
 
   <p>
     From our two snapshots, which are 3 days apart, we can study how prices change. Indeed, the portal we
-    retrieved the data has a unique ID by ad, which we can then use to join the data between these
+    retrieved the data gives a unique ID by ad, which we can then use to join the data between these
     two snapshots.
   </p>
 
   <p>
-    In 3 days, 1931 ads were closed, and 1900 were created (a lot!), which let us with 6986 ads left.
+    In 3 days, 1931 ads were closed, and 1900 were created (a lot!), which let us with 6986 ads remaining.
     Out of these 6986 ads still present, 294 of them changed their prices
     (4% of them, quite a lot). Can you guess the average percentage of change out of the changing ones ?
     The answer is -6.70 % ! That's huge isn't it ? A lot of owners may try at first to price higher than the
     market, and then lower their prices when demand is not there.
   </p>
 
-  <h2>The Price Analysis</h2>
+  <h2>The Ads count Analysis</h2>
 
   <p>
-    Can you guess how price per surface is distributed ? Your safest guess would be some kind of
-    Gaussian distribution, and you would be almost right! Les display the number of ads per price/surface:
+    First, let's display the number of ads per price/surface. Ads count peak for surfaces at around 25m², and slowly decreasing
+    after. What's interesting is how steep the beginning of the curve is.
   </p>
 
   <div id="price-distribution-container" class="graph-container">
@@ -95,18 +95,19 @@
   <h2>The Scraping</h2>
 
   <p>
-    seloger.com, as any decent real-estate portal, offers a mobile application, which means their developpers
+    seloger.com, like any decent real-estate portal, offers a mobile application, which means their developpers
     also built a HTTP API to access their data. Which is great, since it means we do not have to scrape the
-    website directly. Their API is a bit unconventional, as their resources attributes are in french,
+    website directly. Their API is a bit unconventional, as their resource attributes are in french,
     only returning XML data and totally public. The only endpoint I found is located at
     <a href="//ws.seloger.com/search.xml">ws.seloger.com/search.xml</a>. This endpoint, as you guessed it,
     lets you search by criteria (postal code, product type, transaction type, minimum surface, and max surface),
     over their full listing.
   </p>
+
   <p>
     By clicking this
     <a href="http://ws.seloger.com/search.xml?cp=75006&idtt=1&idtypebien=1" target="_blank">link</a>, you can read an example
-    of result from the API. The only difficulty we encounter, is that when your criteria is not constraining enough, the
+    result from the API. The only difficulty we encounter, is that when your criteria is not constrained enough, the
     number or results found by the server will be greater than what it will allow to display. Indeed, the server will only paginate
     up to 50 results, over 4 pages maximum. To retrieve all the data, we will need to iterate throught he listing, filtering enough
     so that for every request, the matching advertisements are not over 200. Let's start to code our scraper:
