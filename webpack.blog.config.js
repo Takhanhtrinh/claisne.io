@@ -6,6 +6,7 @@ const entries = [
   'pendulum',
   'twitch-emotes',
   'paris-rentals',
+  'io-game',
 ];
 
 module.exports = makeConfig(entries, {

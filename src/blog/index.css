@@ -292,10 +292,16 @@ section#posts {
   background: rgba(55, 94, 171, 0.6);
 }
 
+.post.post-cpp .post-header>.info {
+  background: #94c6b4;
+}
+
 .post.post-ex .post-header>.info .title,
 .post.post-ex .post-header>.info .date,
 .post.post-go .post-header>.info .title,
-.post.post-go .post-header>.info .date {
+.post.post-go .post-header>.info .date,
+.post.post-cpp .post-header>.info .title,
+.post.post-cpp .post-header>.info .date {
   color: #fff;
 }
 
@@ -530,7 +536,7 @@ img.article {
   background: #484848;
 }
 
-#pendulum-article {
+.grey-canvas {
   width: 100%;
   height: 500px;
   background: rgb(253, 253, 253);
@@ -538,7 +544,7 @@ img.article {
 }
 
 @media (max-width: 700px) {
-  #pendulum-article {
+  .grey-canvas {
     height: 300px;
   }
 }

@@ -27,6 +27,7 @@ module.exports = (_entries, _options = {}) => {
     plugins.push(
       new CopyWebpackPlugin([
         { from: path.join('src', options.directory, '/img/'), to: 'img/' },
+        { from: path.join('src', options.directory, '/assets/'), to: 'assets/' },
       ]));
   }
 
