@@ -167,6 +167,10 @@ pre.go {
   border-left: 5px solid rgba(55, 94, 171, 0.6);
 }
 
+pre.cpp {
+  border-left: 5px solid #94c6b4;
+}
+
 code {
   font-size: 12px;
 }
