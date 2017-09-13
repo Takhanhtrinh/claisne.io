@@ -2,8 +2,8 @@
 <section class="article">
   <div class="header">
     <div class="header-left">
-      <h1>How to create a IO Game</h1>
-      <div class="date">Posted JUN 21, 2017</div>
+      <h1>How to create an IO Game</h1>
+      <div class="date">Posted SEPT 5, 2017</div>
     </div>
     <div class="header-right">
       <div class="tags">
@@ -27,21 +27,21 @@
   
   <canvas id="animation" class="grey-canvas"></canvas>
 
-  <p>This article is split in two parts, the server-side, and the client-size.</p>
+  <p>This article is split in two parts, the server-side and the client-side.</p>
 
   <h2>The Server-Side</h2>
 
   <p>
     When building a "IO game", you'll have several constraints. First, your server code will have to communicate
     using WebSockets (as it is the simplest way to have a bi-directonial communication channel on the browser). An other one is that
-    you may have a lot of clients connected at the same time (if you are successfull!).
+    you may have a lot of clients connected at the same time (if you are successful!).
     Using C++, and the <a href="//github.com/uNetworking/uWebSockets">uWebSockets</a> library, we will have a server
     able to handle thousands of WebSocket clients with no sweat.
     Our server-side code is about 200 lines of code only! Let's dive into it:
   </p>
 
   <p>
-    Theses first lines of code are, as you can guess, the declaration of our global variables.
+    These first lines of code are, as you can guess, the declaration of our global variables.
     Our world is 1920x1080, we have 100 food cells, and we broadcast the state of the game every 40ms.
   </p>
 
@@ -66,9 +66,7 @@ const double START_SIZE = 10.;</code></pre>
   Vector(const Vector& v) : x(v.x), y(v.y) { }
   static Vector Random() { return Vector(std::rand() % X_MAX, std::rand() % Y_MAX); }
 
-  double norm() {
-    return std::sqrt(std::pow(x, 2) + std::pow(y, 2));
-  }
+  double norm() { return std::hypo(x, y); }
 
   Vector& operator+=(const Vector& v) { x += v.x; y += v.y; return *this; }
 };
@@ -78,32 +76,33 @@ Vector operator/(const Vector& v, double f) { return Vector(v.x / f, v.y / f); }
 Vector operator-(const Vector& l, const Vector& r) { return Vector(l.x - r.x, l.y - r.y); }</code></pre>
 
   <p>
-    This is the most interesting part. Now, with our Vector struct, we can setup the player state.
+    This is the most interesting part. Now, with our Vector struct, we can set up the player state.
     A player has an id, a size, a position, and a target position. I also added the dead and spectating
     attributes. We then have the methods used to update the position of the player, and to check if it is eating a food cell or an other player.
   </p>
 
   <pre class="cpp"><code class="cpp">struct State {
   int id;
-  double s;
-  Vector p;
-  Vector t;
+  double s; // size
+  Vector p; // position
+  Vector t; // target of the client
   bool dead = false;
   bool spectating = false;
 
-  State(int id, const Vector &p) : id(id), p(p), t(p), s(START_SIZE) {};
+  State(int id, const Vector &amp;p) : id(id), p(p), t(p), s(START_SIZE) {};
 
   void update(int dt) {
-    Vector pt = (t - p);
-    double pt_norm = pt.norm();
+    Vector pt = (t - p); // target - position vector
+    double pt_norm = pt.norm(); 
 
-    double l = (dt / 5.) / (std::sqrt(s / START_SIZE));
-    if (l < pt_norm) {
+    double l = (dt / 5.) / (std::sqrt(s / START_SIZE)); // the speed of the player
+    if (l &lt; pt_norm) {
       p += (pt * l) / pt_norm;
     } else {
-      p = t;
+      p = t; // if next position is beyond the target, just set it to the target
     }
 
+    // Limit the position and size
     p.x = std::max(p.x, 0.);
     p.x = std::min(p.x, (double) X_MAX);
     p.y = std::max(p.y, 0.);
@@ -112,15 +111,17 @@ Vector operator-(const Vector& l, const Vector& r) { return Vector(l.x - r.x, l.
   }
 
   void reset() { p = Vector::Random(); s = START_SIZE; t = p; }
-  void set_target(int x, int y) { this->t.x = x; this->t.y = y; }
+  void set_target(int x, int y) { this-&gt;t.x = x; this-&gt;t.y = y; }
 
+  // food eating
   void eat() { s = std::sqrt(std::pow(s, 2) + 5); }
-  bool is_eating(const Vector &v) { return (p - v).norm() < s; }
+  bool is_eating(const Vector &amp;v) { return (p - v).norm() &lt; s; }
 
-  void eat(const State *st) { s = std::sqrt(std::pow(s, 2) + std::pow(st->s, 2)); }
-  bool is_eating(const State *st) { return (p - st->p).norm() < (s - st->s) && s > st->s; }
+  // player eating  
+  void eat(const State &st) { s = std::sqrt(std::pow(s, 2) + std::pow(st-&gt;s, 2)); }
+  bool is_eating(const State &st) { return (p - st.p).norm() &lt; (s - st.s) &amp;&amp; s &gt; st.s; }
 
-  bool is_playing() { return !dead && !spectating; }
+  bool is_playing() { return !dead &amp;&amp; !spectating; }
 };</code></pre>
 
   <p>
@@ -135,37 +136,39 @@ Vector operator-(const Vector& l, const Vector& r) { return Vector(l.x - r.x, l.
 int next_id = 0;
 int connections_count = 0;
 
-hub.onConnection([&next_id, &connections](uWS::WebSocket<uWS::SERVER> *ws, uWS::HttpRequest req) {
+hub.onConnection([&amp;next_id, &amp;connections](uWS::WebSocket&lt;uWS::SERVER&gt; *ws, uWS::HttpRequest req) {
   int id = next_id++;
   connections++;
 
-  State* state = new State(id, Vector::Random());
-  ws->setUserData(state);
-  if(connections > MAX_CONNECTIONS) { state->spectating = true; return; };
+  State* state = new State(id, Vector::Random()); //new state with random position
+  ws-&gt;setUserData(state); // attach the data to the socket
+  if(connections &gt; MAX_CONNECTIONS) { state-&gt;spectating = true; return; }; // spectating if too many players
 
-  json j = {{"id", id}};
-  std::vector<std::uint8_t> jcbor = json::to_cbor(j);
-  ws->send(reinterpret_cast<char*>(jcbor.data()), jcbor.size(), uWS::BINARY);
+  // we send the player id to the client
+  json j = {{&quot;id&quot;, id}};
+  std::vector&lt;std::uint8_t&gt; jcbor = json::to_cbor(j);
+  ws-&gt;send(reinterpret_cast&lt;char*&gt;(jcbor.data()), jcbor.size(), uWS::BINARY);
 });
 
-hub.onMessage([](uWS::WebSocket<uWS::SERVER> *ws, char *message, size_t length, uWS::OpCode opCode) {
-  State *state = (State *) ws->getUserData();
-  if (!state->is_playing()) { return; }
+hub.onMessage([](uWS::WebSocket&lt;uWS::SERVER&gt; *ws, char *message, size_t length, uWS::OpCode opCode) {
+  State *state = (State *) ws-&gt;getUserData();
+  if (!state-&gt;is_playing()) { return; }
 
+  // parsing the target position of the client
   try {
     std::string message_s(message, length);
     json message_j = json::parse(message_s);
 
-    if (message_j["x"].is_number_integer() && message_j["y"].is_number_integer()) {
-      state->set_target((int) message_j["x"], (int) message_j["y"]);
+    if (message_j[&quot;x&quot;].is_number_integer() &amp;&amp; message_j[&quot;y&quot;].is_number_integer()) {
+      state-&gt;set_target((int) message_j[&quot;x&quot;], (int) message_j[&quot;y&quot;]);
     } 
   } catch(std::exception) {
-    ws->terminate();
+    ws-&gt;terminate();
   }
 });
 
-hub.onDisconnection([&connections](uWS::WebSocket<uWS::SERVER> *ws, int code, char *message, size_t length) {
-  State *state = (State*) ws->getUserData();
+hub.onDisconnection([&amp;connections](uWS::WebSocket&lt;uWS::SERVER&gt; *ws, int code, char *message, size_t length) {
+  State *state = (State*) ws-&gt;getUserData();
   connections--;
   delete state;
 });</code></pre>
@@ -175,10 +178,11 @@ hub.onDisconnection([&connections](uWS::WebSocket<uWS::SERVER> *ws, int code, ch
     a Timer, and attach it to our event loop. This is equivalent to a setInterval in JS.
   </p>
 
-  <pre class="cpp"><code class="cpp">std::vector<Vector> foods(FOOD_MAX);
+  <pre class="cpp"><code class="cpp">std::vector<Vector> foods(FOOD_MAX); // food cells declaration
 std::generate(foods.begin(), foods.end(), []() { return Vector::Random(); });
 
-struct TimerData { uWS::Hub* hub; std::vector<Vector> *foods; int *last_timestamp; };
+// Data attached to our timer
+struct TimerData { uWS::Hub* hub; std::vector&lt;Vector&gt; *foods; int *last_timestamp; };
 TimerData timer_data = { &hub, &foods, new int };
 
 Timer *timer = new Timer(hub.getLoop());
@@ -187,19 +191,22 @@ timer->setData((void*) &timer_data);
 timer->start([](Timer *timer) {
   TimerData *timer_data = (TimerData*)timer->getData();
   uWS::Hub *hub = timer_data->hub;
-  std::vector<Vector> *foods = timer_data->foods;
+  std::vector&lt;Vector&gt; *foods = timer_data-&gt;foods;
 
+  // Compute delta time in ms
   int timestamp = milliseconds_since_epoch();
   int *last_timestamp = timer_data->last_timestamp;
   int delta_timestamp = last_timestamp ? timestamp - (*last_timestamp) : 0;
   *last_timestamp = milliseconds_since_epoch();
 
-  hub->getDefaultGroup<uWS::SERVER>().forEach([hub, delta_timestamp, foods](uWS::WebSocket<uWS::SERVER> *ws) {
+  // Iterate over clients, and update them  
+  hub-&gt;getDefaultGroup&lt;uWS::SERVER&gt;().forEach([hub, delta_timestamp, foods](uWS::WebSocket&lt;uWS::SERVER&gt; *ws) {
     State *state = (State *) ws->getUserData();
     if (!state->is_playing()) { return; }
 
     state->update(delta_timestamp);
 
+    // Check if food is being eaten
     for (auto food_it = foods->begin(); food_it != foods->end(); ++food_it) {
       if (state->is_eating(*food_it)) {
         (*food_it) = Vector::Random();
@@ -207,41 +214,48 @@ timer->start([](Timer *timer) {
       }
     }
 
-    hub->getDefaultGroup<uWS::SERVER>().forEach([state](uWS::WebSocket<uWS::SERVER> *ws_opponent) {
+    // Check if other player is being eaten  
+    hub-&gt;getDefaultGroup&lt;uWS::SERVER&gt;().forEach([state](uWS::WebSocket&lt;uWS::SERVER&gt; *ws_opponent) {
       State *state_opponent = (State *) ws_opponent->getUserData();
       if (!state_opponent->is_playing()) { return; }
 
-      if (state->is_eating(state_opponent)) {
-        state->eat(state_opponent);
+      if (state->is_eating(*state_opponent)) {
+        state->eat(*state_opponent);
         state_opponent->reset();
         state_opponent->dead = true;
       }
     });
   });
 
-  std::vector<State*> states;
-  hub->getDefaultGroup<uWS::SERVER>().forEach([&states](uWS::WebSocket<uWS::SERVER> *ws) {
-    State *state = (State *) ws->getUserData();
-    if (!state->is_playing()) {
-      state->dead = false;
+  // Broadcast all the states updated to clients
+  std::vector&lt;State*&gt; states;
+  hub-&gt;getDefaultGroup&lt;uWS::SERVER&gt;().forEach([&amp;states](uWS::WebSocket&lt;uWS::SERVER&gt; *ws) {
+    State *state = (State *) ws-&gt;getUserData();
+    if (!state-&gt;is_playing()) {
+      state-&gt;dead = false;
       return;
     }
     states.push_back(state);
   });
 
-  json j = {{"timestamp", timestamp}, {"states", states}, {"foods", *foods}};
-  std::vector<std::uint8_t> jcbor = json::to_cbor(j);
-  hub->getDefaultGroup<uWS::SERVER>().broadcast(reinterpret_cast<char*>(jcbor.data()), jcbor.size(), uWS::BINARY);
+  json j = {{&quot;timestamp&quot;, timestamp}, {&quot;states&quot;, states}, {&quot;foods&quot;, *foods}};
+  std::vector&lt;std::uint8_t&gt; jcbor = json::to_cbor(j);
+  hub-&gt;getDefaultGroup&lt;uWS::SERVER&gt;().broadcast(reinterpret_cast&lt;char*&gt;(jcbor.data()), jcbor.size(), uWS::BINARY);
 }, 0, REPEAT_MS);
 </code></pre>
 
 <p>
   And here you go! We now have a server for our "IO game". There are a lot of improvements
   to be made. First we need to improve the communication between the server and the client. For instance, we don't
-  need to send every time the food cells over the network. We could also develop a custom-made binary protocol to save some bytes
+  need to send constantly the food cells over the network. We could also develop a custom-made binary protocol to save some bytes
   on the network.
 </p>
-<p>As always, you can find the full code <a href="//github.com/claisne/io-game" target="_blank">here</a>.</p>
 
-<!-- <%= require('../disqus.ejs')() %> -->
+<p>
+  As always, you can find the full code <a href="//github.com/claisne/io-game" target="_blank">here</a>.
+  That's it for the first part of this blog entry! I'll do an other one to explain the client-side as soon
+  as I can.
+</p>
+
+<%= require('../disqus.ejs')() %>
 </section>

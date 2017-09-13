@@ -7,6 +7,7 @@ const entries = [
   'twitch-emotes',
   'paris-rentals',
   'io-game',
+  'programming-subreddits',
 ];
 
 module.exports = makeConfig(entries, {

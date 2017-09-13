@@ -1,0 +1,130 @@
+
+<section class="article">
+  <div class="header">
+    <div class="header-left">
+      <h1>Programming Subreddits</h1>
+      <div class="date">Posted </div>
+    </div>
+    <div class="header-right">
+      <div class="tags">
+        <div class="tag">Python</div>
+        <div class="tag">Stats</div>
+        <div class="tag">Sql</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Introduction</h2>
+
+  <p>
+    Reddit is a gold mine for every programmer. Submissions will allow you to keep
+    up to date with the latest news and developments, and comments will let you learn and improve.
+    I wanted to explore the relationships between programming languages subreddits, and their
+    behaviors for a long time. Recently I stumbled on the reddit dataset maintained by
+    <a href="//www.reddit.com/user/Stuck_In_the_Matrix" target="_blank">Stuck_In_the_Matrix</a>. He
+    archived all of reddit (and still is). I downloaded more than 100gb of data, and started my analysis.
+    This post is focused only on the results, and not the code (maybe for another post?).
+    Let's start!
+    <br />
+    <small>I may have forgotten your favorite language (please contact me, and I'll add it right away).</small>
+  </p>
+
+  <h2>Relative Word frequency</h2>
+
+  <p>
+    <div id="word-frequency-languages">
+      <div class="word-frequency-language selected">
+        <img src="/img/languages/python.svg" />
+        <span class="word-frequency-language-tooltip">Python</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/javascript.svg" />
+        <span class="word-frequency-language-tooltip">JavaScript</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/java.svg" />
+        <span class="word-frequency-language-tooltip">Java</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/cpp.svg" />
+        <span class="word-frequency-language-tooltip">C++</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/php.svg" />
+        <span class="word-frequency-language-tooltip">PHP</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/csharp.svg" />
+        <span class="word-frequency-language-tooltip">C#</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/ruby.svg" />
+        <span class="word-frequency-language-tooltip">Ruby</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/go.svg" />
+        <span class="word-frequency-language-tooltip">Go</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/c.svg" />
+        <span class="word-frequency-language-tooltip">C</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/haskell.svg" />
+        <span class="word-frequency-language-tooltip">Haskell</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/rust.svg" />
+        <span class="word-frequency-language-tooltip">Rust</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/swift.svg" />
+        <span class="word-frequency-language-tooltip">Swift</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/scala.svg" />
+        <span class="word-frequency-language-tooltip">Scala</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/clojure.svg" />
+        <span class="word-frequency-language-tooltip">Clojure</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/perl.png" />
+        <span class="word-frequency-language-tooltip">Perl</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/elixir.png" />
+        <span class="word-frequency-language-tooltip">Elixir</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/r.png" />
+        <span class="word-frequency-language-tooltip">R</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/erlang.svg" />
+        <span class="word-frequency-language-tooltip">Erlang</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/kotlin.svg" />
+        <span class="word-frequency-language-tooltip">Kotlin</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/lua.svg" />
+        <span class="word-frequency-language-tooltip">Lua</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/objective-c.gif" />
+        <span class="word-frequency-language-tooltip">Objective-C</span>
+      </div>
+      <div class="word-frequency-language">
+        <img src="/img/languages/ocaml.svg" />
+        <span class="word-frequency-language-tooltip">Ocaml</span>
+      </div>
+    </div>
+  </p>
+
+  <svg id="word-frequency-languages-svg" class="grey-canvas"></svg>
+
+<!-- <%= require('../disqus.ejs')() %> -->
+</section>

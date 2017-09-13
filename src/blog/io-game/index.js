@@ -14,4 +14,3 @@ highlight.initHighlightingOnLoad();
 document.querySelectorAll('.inline-code').forEach(highlight.highlightBlock);
 
 game(document.getElementById('animation'));
-

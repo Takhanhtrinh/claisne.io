@@ -296,6 +296,10 @@ section#posts {
   background: rgba(55, 94, 171, 0.6);
 }
 
+.post.post-reddit .post-header>.info {
+  background: rgba(255, 69, 0, 0.5);
+}
+
 .post.post-cpp .post-header>.info {
   background: #94c6b4;
 }
@@ -305,7 +309,9 @@ section#posts {
 .post.post-go .post-header>.info .title,
 .post.post-go .post-header>.info .date,
 .post.post-cpp .post-header>.info .title,
-.post.post-cpp .post-header>.info .date {
+.post.post-cpp .post-header>.info .date,
+.post.post-reddit .post-header>.info .title,
+.post.post-reddit .post-header>.info .date {
   color: #fff;
 }
 
@@ -324,6 +330,7 @@ section#posts {
   border: none;
 }
 
+.post-header>.picture.programming-subreddits,
 .post-header>.picture.twitch {
   display: flex;
   flex-direction: column;
@@ -336,12 +343,25 @@ section#posts {
   height: 200px;
 }
 
+.post-header>.picture.programming-subreddits .line,
 .post-header>.picture.twitch .line {
   flex: 1 1 auto;
   display: flex;
   width: 100%;
   align-items: center;
   justify-content: space-around;
+}
+
+.post-header>.picture.programming-subreddits {
+  perspective: 500px;
+}
+
+.post-header>.picture.programming-subreddits img {
+  max-width: 40px;
+  max-height: 40px;
+  padding: 5px;
+  border: 1px solid #ddd;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
 }
 
 .post-header>.picture>canvas {
@@ -762,4 +782,62 @@ img.article {
   .graph {
     height: 300px;
   }
+}
+
+#word-frequency-languages {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+#word-frequency-languages .word-frequency-language {
+  padding: 5px;
+  border: 1px solid #ddd;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin: 3px 3px;
+}
+
+#word-frequency-languages .word-frequency-language.selected {
+  box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.1);
+}
+
+#word-frequency-languages .word-frequency-language:hover .word-frequency-language-tooltip {
+  opacity: 1;
+}
+#word-frequency-languages .word-frequency-language-tooltip {
+  position: absolute;
+  bottom: 47px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 3px 6px;
+  color: #fff;
+  border-radius: 3px;
+  transition: all 300ms;
+  opacity: 0;
+  font-size: 0.7em;
+  white-space: nowrap;
+}
+
+#word-frequency-languages .word-frequency-language-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #555 transparent transparent transparent;
+}
+
+#word-frequency-languages .word-frequency-language.selected .word-frequency-language-tooltip {
+  opacity: 1;
+}
+
+#word-frequency-languages .word-frequency-language>img {
+  max-height: 30px;
+  width: 30px;
 }
