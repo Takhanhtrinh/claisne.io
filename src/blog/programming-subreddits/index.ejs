@@ -3,7 +3,7 @@
   <div class="header">
     <div class="header-left">
       <h1>Programming Subreddits</h1>
-      <div class="date">Posted </div>
+      <div class="date">Posted SEPT 18, 2017</div>
     </div>
     <div class="header-right">
       <div class="tags">
@@ -20,111 +20,279 @@
     Reddit is a gold mine for every programmer. Submissions will allow you to keep
     up to date with the latest news and developments, and comments will let you learn and improve.
     I wanted to explore the relationships between programming languages subreddits, and their
-    behaviors for a long time. Recently I stumbled on the reddit dataset maintained by
+    behaviors for a long time. Recently I stumbled on a reddit dataset maintained by
     <a href="//www.reddit.com/user/Stuck_In_the_Matrix" target="_blank">Stuck_In_the_Matrix</a>. He
-    archived all of reddit (and still is). I downloaded more than 100gb of data, and started my analysis.
+    archived all of reddit (and still is). I downloaded more than 100 GB of data (the last 3 months), and started my analysis.
     This post is focused only on the results, and not the code (maybe for another post?).
     Let's start!
     <br />
-    <small>I may have forgotten your favorite language (please contact me, and I'll add it right away).</small>
+    <small>Languages are ordered by <strong>subscribers count</strong>. I may have forgotten your favorite language (please contact me, and I'll add it right away).</small>
   </p>
 
   <h2>Relative Word frequency</h2>
 
   <p>
     <div id="word-frequency-languages">
-      <div class="word-frequency-language selected">
+      <div class="language" data-subreddit="Python">
         <img src="/img/languages/python.svg" />
-        <span class="word-frequency-language-tooltip">Python</span>
+        <span class="tooltip">Python</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="javascript">
         <img src="/img/languages/javascript.svg" />
-        <span class="word-frequency-language-tooltip">JavaScript</span>
+        <span class="tooltip">JavaScript</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="java">
         <img src="/img/languages/java.svg" />
-        <span class="word-frequency-language-tooltip">Java</span>
+        <span class="tooltip">Java</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="cpp">
         <img src="/img/languages/cpp.svg" />
-        <span class="word-frequency-language-tooltip">C++</span>
+        <span class="tooltip">C++</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="PHP">
         <img src="/img/languages/php.svg" />
-        <span class="word-frequency-language-tooltip">PHP</span>
+        <span class="tooltip">PHP</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="csharp">
         <img src="/img/languages/csharp.svg" />
-        <span class="word-frequency-language-tooltip">C#</span>
+        <span class="tooltip">C#</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="ruby">
         <img src="/img/languages/ruby.svg" />
-        <span class="word-frequency-language-tooltip">Ruby</span>
+        <span class="tooltip">Ruby</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="golang">
         <img src="/img/languages/go.svg" />
-        <span class="word-frequency-language-tooltip">Go</span>
+        <span class="tooltip">Go</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="C_Programming">
         <img src="/img/languages/c.svg" />
-        <span class="word-frequency-language-tooltip">C</span>
+        <span class="tooltip">C</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="haskell">
         <img src="/img/languages/haskell.svg" />
-        <span class="word-frequency-language-tooltip">Haskell</span>
+        <span class="tooltip">Haskell</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="rust">
         <img src="/img/languages/rust.svg" />
-        <span class="word-frequency-language-tooltip">Rust</span>
+        <span class="tooltip">Rust</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="swift">
         <img src="/img/languages/swift.svg" />
-        <span class="word-frequency-language-tooltip">Swift</span>
+        <span class="tooltip">Swift</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="scala">
         <img src="/img/languages/scala.svg" />
-        <span class="word-frequency-language-tooltip">Scala</span>
+        <span class="tooltip">Scala</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="Clojure">
         <img src="/img/languages/clojure.svg" />
-        <span class="word-frequency-language-tooltip">Clojure</span>
+        <span class="tooltip">Clojure</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="perl">
         <img src="/img/languages/perl.png" />
-        <span class="word-frequency-language-tooltip">Perl</span>
+        <span class="tooltip">Perl</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="elixir">
         <img src="/img/languages/elixir.png" />
-        <span class="word-frequency-language-tooltip">Elixir</span>
+        <span class="tooltip">Elixir</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="Rlanguage">
         <img src="/img/languages/r.png" />
-        <span class="word-frequency-language-tooltip">R</span>
+        <span class="tooltip">R</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="erlang">
         <img src="/img/languages/erlang.svg" />
-        <span class="word-frequency-language-tooltip">Erlang</span>
+        <span class="tooltip">Erlang</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="Kotlin">
         <img src="/img/languages/kotlin.svg" />
-        <span class="word-frequency-language-tooltip">Kotlin</span>
+        <span class="tooltip">Kotlin</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="lua">
         <img src="/img/languages/lua.svg" />
-        <span class="word-frequency-language-tooltip">Lua</span>
+        <span class="tooltip">Lua</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="ObjectiveC">
         <img src="/img/languages/objective-c.gif" />
-        <span class="word-frequency-language-tooltip">Objective-C</span>
+        <span class="tooltip">Objective-C</span>
       </div>
-      <div class="word-frequency-language">
+      <div class="language" data-subreddit="ocaml">
         <img src="/img/languages/ocaml.svg" />
-        <span class="word-frequency-language-tooltip">Ocaml</span>
+        <span class="tooltip">Ocaml</span>
       </div>
     </div>
   </p>
 
-  <svg id="word-frequency-languages-svg" class="grey-canvas"></svg>
+  <div id="word-frequency-languages-svg-container">
+    <svg id="word-frequency-languages-svg" class="grey-canvas"></svg>
+  </div>
+
+  <p>
+    This visualization shows you the <strong>100 most frequent words</strong> in each subreddit, <strong>relative to the global mean</strong>. For instance,
+    the word "learnpython" has a frequency of 0.2% over the Python subreddit while having a mean frequency of 0.01%
+    over all programming language subreddits. Which means that its relative frequency is 0.1%. The surface of the bubbles
+    is proportional to this relative frequency, and the color is darker as the relative frequency is higher.
+  </p>
+
+  <p>
+    While doing the frequency count, I removed common english stop words, and all the words corresponding to the subreddit language
+    (ie for /r/javascript I removed the words "javascript" and "js"), in order to not pollute the visualization. Already, with this
+    bubble graph, we can make some observations:
+  </p>
+
+  <ul>
+    <li>
+      <strong>Python:</strong>
+      This subreddit is quite educational! Words like "help",
+      "learn", "questions", "encourage", are way more frequent.
+    </li>
+    <li>
+      <strong>Javascript:</strong>
+      A strong focus on frameworks and tools. Not surprising from the "fatigue" inducing language.
+    </li>
+    <li>
+      <strong>Java & C#:</strong>
+      These languages have a reputation of enterprise usage. And it is verified with words like "company", "business", "developer" and "customer"
+      that are indeed quite prevalent.
+    </li>
+    <li>
+      <strong>Go:</strong>
+      Can't escape the biggest controversy of Go: "generic(s)"
+    </li>
+    <li>
+      <strong>Php:</strong>
+      Comments contains way more "shit" than other languages. I'll let you draw conclusions as to why...
+    </li>
+  </ul>
+
+  <h2>Commenters in Common</h2>
+
+  <div id="common-users-matrix">
+  </div>
+
+  <p>
+    This matrix shows you the common commenters by programming subreddits. Each matrix element shows you
+    the percentage of commenters in the row language also commenting in the column language. This visualization
+    let us see the relationships between programming languages. We can make some simple observations:
+  </p>
+
+  <ul>
+    <li>
+      <strong>Python:</strong>
+      The biggest language subreddit (in subscribers count) attracts commenters from almost every other subreddits
+      (except Objective-C!).
+    </li>
+    <li>
+      <strong>Swift:</strong>
+      This language is pretty isolated, even from Objective-C.
+    </li>
+    <li>
+      <strong>Rust:</strong>
+      A medium sized subreddit (in subscribers count), but surprisingly, it attracts commenters from a lot of subreddits.
+    </li>
+    <li>
+      <strong>Clojure:</strong>
+      mostly attracts Erlang and Ocaml commenters but surprisingly almost no Haskell commenters.
+    </li>
+  </ul>
+
+  <h2>Comments Length</h2>
+
+  <p>
+    <div id="comments-length-bars"></div>
+
+    <div id="comments-length">
+      <div class="language" data-subreddit="Python">
+        <img src="/img/languages/python.svg" />
+        <span class="tooltip">Python</span>
+      </div>
+      <div class="language" data-subreddit="javascript">
+        <img src="/img/languages/javascript.svg" />
+        <span class="tooltip">JavaScript</span>
+      </div>
+      <div class="language" data-subreddit="java">
+        <img src="/img/languages/java.svg" />
+        <span class="tooltip">Java</span>
+      </div>
+      <div class="language" data-subreddit="cpp">
+        <img src="/img/languages/cpp.svg" />
+        <span class="tooltip">C++</span>
+      </div>
+      <div class="language" data-subreddit="PHP">
+        <img src="/img/languages/php.svg" />
+        <span class="tooltip">PHP</span>
+      </div>
+      <div class="language" data-subreddit="csharp">
+        <img src="/img/languages/csharp.svg" />
+        <span class="tooltip">C#</span>
+      </div>
+      <div class="language" data-subreddit="ruby">
+        <img src="/img/languages/ruby.svg" />
+        <span class="tooltip">Ruby</span>
+      </div>
+      <div class="language" data-subreddit="golang">
+        <img src="/img/languages/go.svg" />
+        <span class="tooltip">Go</span>
+      </div>
+      <div class="language" data-subreddit="C_Programming">
+        <img src="/img/languages/c.svg" />
+        <span class="tooltip">C</span>
+      </div>
+      <div class="language" data-subreddit="haskell">
+        <img src="/img/languages/haskell.svg" />
+        <span class="tooltip">Haskell</span>
+      </div>
+      <div class="language" data-subreddit="rust">
+        <img src="/img/languages/rust.svg" />
+        <span class="tooltip">Rust</span>
+      </div>
+      <div class="language" data-subreddit="swift">
+        <img src="/img/languages/swift.svg" />
+        <span class="tooltip">Swift</span>
+      </div>
+      <div class="language" data-subreddit="scala">
+        <img src="/img/languages/scala.svg" />
+        <span class="tooltip">Scala</span>
+      </div>
+      <div class="language" data-subreddit="Clojure">
+        <img src="/img/languages/clojure.svg" />
+        <span class="tooltip">Clojure</span>
+      </div>
+      <div class="language" data-subreddit="perl">
+        <img src="/img/languages/perl.png" />
+        <span class="tooltip">Perl</span>
+      </div>
+      <div class="language" data-subreddit="elixir">
+        <img src="/img/languages/elixir.png" />
+        <span class="tooltip">Elixir</span>
+      </div>
+      <div class="language" data-subreddit="Rlanguage">
+        <img src="/img/languages/r.png" />
+        <span class="tooltip">R</span>
+      </div>
+      <div class="language" data-subreddit="erlang">
+        <img src="/img/languages/erlang.svg" />
+        <span class="tooltip">Erlang</span>
+      </div>
+      <div class="language" data-subreddit="Kotlin">
+        <img src="/img/languages/kotlin.svg" />
+        <span class="tooltip">Kotlin</span>
+      </div>
+      <div class="language" data-subreddit="lua">
+        <img src="/img/languages/lua.svg" />
+        <span class="tooltip">Lua</span>
+      </div>
+      <div class="language" data-subreddit="ObjectiveC">
+        <img src="/img/languages/objective-c.gif" />
+        <span class="tooltip">Objective-C</span>
+      </div>
+      <div class="language" data-subreddit="ocaml">
+        <img src="/img/languages/ocaml.svg" />
+        <span class="tooltip">Ocaml</span>
+      </div>
+    </div>
+  </p>
 
 <!-- <%= require('../disqus.ejs')() %> -->
 </section>

@@ -69,11 +69,15 @@ module.exports = (_entries, _options = {}) => {
           use: {
             loader: 'babel-loader',
             options: {
-              presets: [['env', {
-                target: {
-                  browser: ['> 5%'],
-                },
-              }]],
+              presets: [
+                'es2015',
+                'stage-3',
+                ['env', {
+                  target: {
+                    browser: ['> 5%'],
+                  },
+                }],
+              ],
             },
           },
         },

@@ -1,11 +1,10 @@
 
 import highlight from 'highlight.js/lib/highlight';
 import highlightJavascript from 'highlight.js/lib/languages/javascript';
+import 'highlight.js/styles/tomorrow.css';
 
 import katex from 'katex';
 import 'katex/dist/katex.css';
-
-import 'highlight.js/styles/tomorrow.css';
 
 import '../defaults';
 

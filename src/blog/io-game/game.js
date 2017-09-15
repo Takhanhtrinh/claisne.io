@@ -4,8 +4,8 @@ import CBOR from 'cbor-js';
 import WebSocket from 'reconnecting-websocket';
 
 export default function (canvas) {
-  // const ws = new WebSocket('wss://ws.claisne.io/io-game');
-  const ws = new WebSocket('ws://localhost:4001');
+  const ws = new WebSocket('wss://ws.claisne.io/io-game');
+  // const ws = new WebSocket('ws://localhost:4001');
   ws.binaryType = 'arraybuffer';
 
   canvas.width = canvas.clientWidth;

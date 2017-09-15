@@ -1,12 +1,11 @@
 
 import highlight from 'highlight.js/lib/highlight';
 import highlightCpp from 'highlight.js/lib/languages/cpp';
-
-import game from './game';
-
 import 'highlight.js/styles/tomorrow.css';
 
 import '../defaults';
+
+import game from './game';
 
 highlight.registerLanguage('cpp', highlightCpp);
 highlight.initHighlightingOnLoad();
