@@ -1,8 +1,5 @@
 
 import values from 'lodash/values';
-import highlight from 'highlight.js/lib/highlight';
-import highlightPython from 'highlight.js/lib/languages/python';
-import 'highlight.js/styles/tomorrow.css';
 
 import * as d3 from 'd3';
 
@@ -11,22 +8,25 @@ import '../defaults';
 import relWordFrequency from './data/rel_word_freq.json';
 import usersInCommon from './data/users_in_common.json';
 import commentsLength from './data/comments_length.json';
-
-highlight.registerLanguage('javascript', highlightPython);
-highlight.initHighlightingOnLoad();
-
-document.querySelectorAll('.inline-code').forEach(highlight.highlightBlock);
+import submissionsScores from './data/submissions_scores.json';
 
 const container = d3.select('#word-frequency-languages-svg-container');
 const svg = d3.select('#word-frequency-languages-svg');
 const { width, height } = svg.node().getBoundingClientRect();
-// const center = { x: width / 2, y: height / 2 };
 
 let simulation;
 const draw = (subreddit) => {
-  const nodes = relWordFrequency[subreddit]
+  let nodes = relWordFrequency[subreddit]
     .filter(d => d.freq <= 0.009)
     .filter(d => d.word !== subreddit.toLowerCase() && (subreddit !== 'javascript' || d.word !== 'js') && (subreddit !== 'golang' || d.word !== 'x00'));
+
+  if (width * height < 300000) {
+    nodes = nodes.slice(0, 50);
+  }
+
+  if (width * height < 100000) {
+    nodes = nodes.slice(0, 25);
+  }
 
   const surface = nodes.map(d => d.freq - d.mean_freq).reduce((a, b) => a + b, 0);
 
@@ -106,145 +106,183 @@ const draw = (subreddit) => {
     .attr('r', radius);
 };
 
-draw('Python');
-
 const languageElmts = document.getElementById('word-frequency-languages').children;
 
 let currentLanguageElmt = languageElmts[0];
 currentLanguageElmt.classList.toggle('selected');
 draw(currentLanguageElmt.dataset.subreddit);
 
+const onClick = (languageElmt) => {
+  languageElmt.classList.toggle('selected');
+  const language = languageElmt.dataset.subreddit;
+  draw(language);
+  currentLanguageElmt.classList.toggle('selected');
+  currentLanguageElmt = languageElmt;
+};
+
 for (let i = 0; i < languageElmts.length; i += 1) {
   const languageElmt = languageElmts[i];
-  languageElmt.addEventListener('click', () => {
-    languageElmt.classList.toggle('selected');
-    const language = languageElmt.dataset.subreddit;
-    draw(language);
-    currentLanguageElmt.classList.toggle('selected');
-    currentLanguageElmt = languageElmt;
+  languageElmt.addEventListener('click', () => { onClick(languageElmt); });
+  languageElmt.addEventListener('touchstart', () => { onClick(languageElmt); });
+}
+
+(function drawCommonUsers() {
+  const commonUsersElmt = document.getElementById('common-users-matrix');
+
+  const firstLine = document.createElement('div');
+  firstLine.className = 'line';
+
+  const emptyMatrixElmt = document.createElement('div');
+  emptyMatrixElmt.className = 'matrix-elmt';
+
+  firstLine.appendChild(emptyMatrixElmt);
+
+  const matrixElmts = [];
+  const rowLanguages = [];
+  const columnLanguages = [];
+
+  for (let i = 0; i < languageElmts.length; i += 1) {
+    const languageElmt = languageElmts[i].cloneNode(true);
+    languageElmt.className = 'language';
+    firstLine.appendChild(languageElmt);
+    rowLanguages[i] = languageElmt;
+  }
+
+  commonUsersElmt.appendChild(firstLine);
+
+  for (let i = 0; i < languageElmts.length; i += 1) {
+    const line = document.createElement('div');
+    line.className = 'line';
+
+    const languageElmt = languageElmts[i].cloneNode(true);
+    languageElmt.className = 'language';
+    line.appendChild(languageElmt);
+    columnLanguages[i] = languageElmt;
+
+    matrixElmts[i] = [];
+    for (let j = 0; j < languageElmts.length; j += 1) {
+      const matrixElmt = document.createElement('div');
+      matrixElmt.className = 'matrix-elmt';
+      matrixElmts[i][j] = matrixElmt;
+
+      const rowLanguage = languageElmts[i].dataset.subreddit;
+      const colLanguage = languageElmts[j].dataset.subreddit;
+
+      if (i !== j) {
+        const matrixElmtTooltip = document.createElement('span');
+        matrixElmtTooltip.className = 'tooltip';
+        matrixElmtTooltip.innerHTML = `${Math.round(usersInCommon[rowLanguage][colLanguage] * 100)} %`;
+        matrixElmtTooltip.innerHTML += ` of ${rowLanguage} also comment in ${colLanguage}`;
+        matrixElmtTooltip.innerHTML = `<span>${matrixElmtTooltip.innerHTML}</span>`;
+
+        matrixElmt.appendChild(matrixElmtTooltip);
+      }
+
+      line.appendChild(matrixElmt);
+    }
+
+    commonUsersElmt.appendChild(line);
+  }
+
+
+  let min = 1;
+  let max = 0;
+  for (let i = 0; i < languageElmts.length; i += 1) {
+    for (let j = 0; j < languageElmts.length; j += 1) {
+      const rowLanguage = languageElmts[i].dataset.subreddit;
+      const colLanguage = languageElmts[j].dataset.subreddit;
+
+      if (i !== j) {
+        max = Math.max(max, usersInCommon[rowLanguage][colLanguage]);
+        min = Math.min(min, usersInCommon[rowLanguage][colLanguage]);
+      }
+    }
+  }
+
+  const fillColor = d3.scaleLinear().domain([min, max])
+    .interpolate(d3.interpolateHcl)
+    .range([d3.rgb('#e4f5b5'), d3.rgb('#1e3489')]);
+
+  for (let i = 0; i < languageElmts.length; i += 1) {
+    for (let j = 0; j < languageElmts.length; j += 1) {
+      const rowLanguage = languageElmts[i].dataset.subreddit;
+      const colLanguage = languageElmts[j].dataset.subreddit;
+
+      matrixElmts[i][j].style.height = `${matrixElmts[i][j].offsetWidth}px`;
+
+      if (i !== j) {
+        matrixElmts[i][j].style.background = fillColor(usersInCommon[rowLanguage][colLanguage]);
+      }
+    }
+  }
+
+  rowLanguages.forEach((l) => {
+    l.style.height = `${l.offsetWidth}px`;
   });
-}
 
-const commonUsersElmt = document.getElementById('common-users-matrix');
+  columnLanguages.forEach((l) => {
+    l.style.height = `${l.offsetWidth}px`;
+  });
+}());
 
-const firstLine = document.createElement('div');
-firstLine.className = 'line';
+(function drawCommentsLength() {
+  const commentsLengthElmt = document.getElementById('comments-length');
 
-const emptyMatrixElmt = document.createElement('div');
-emptyMatrixElmt.className = 'matrix-elmt';
-
-firstLine.append(emptyMatrixElmt);
-
-const matrixElmts = [];
-const rowLanguages = [];
-const columnLanguages = [];
-
-for (let i = 0; i < languageElmts.length; i += 1) {
-  const languageElmt = languageElmts[i].cloneNode(true);
-  languageElmt.className = 'language';
-  firstLine.appendChild(languageElmt);
-  rowLanguages[i] = languageElmt;
-}
-
-commonUsersElmt.appendChild(firstLine);
-
-for (let i = 0; i < languageElmts.length; i += 1) {
-  const line = document.createElement('div');
-  line.className = 'line';
-
-  const languageElmt = languageElmts[i].cloneNode(true);
-  languageElmt.className = 'language';
-  line.appendChild(languageElmt);
-  columnLanguages[i] = languageElmt;
-
-  matrixElmts[i] = [];
-  for (let j = 0; j < languageElmts.length; j += 1) {
-    const matrixElmt = document.createElement('div');
-    matrixElmt.className = 'matrix-elmt';
-    matrixElmts[i][j] = matrixElmt;
-
-    const rowLanguage = languageElmts[i].dataset.subreddit;
-    const colLanguage = languageElmts[j].dataset.subreddit;
-
-    if (i !== j) {
-      const matrixElmtTooltip = document.createElement('span');
-      matrixElmtTooltip.className = 'tooltip';
-      matrixElmtTooltip.innerHTML = `${Math.round(usersInCommon[rowLanguage][colLanguage] * 100)} %`;
-      matrixElmtTooltip.innerHTML += ` of ${rowLanguage} commenters also comment in ${colLanguage}`;
-
-      matrixElmt.appendChild(matrixElmtTooltip);
-    }
-
-    line.append(matrixElmt);
+  for (let i = 0; i < commentsLengthElmt.children.length; i += 1) {
+    const language = commentsLengthElmt.children[i];
+    language.style.height = `${language.offsetWidth}px`;
   }
 
-  commonUsersElmt.appendChild(line);
-}
+  const barHeightScale = d3.scaleLinear().domain([0, d3.max(values(commentsLength))])
+    .range([0, 200]);
 
+  const barFillColor = d3.scaleLinear().domain(d3.extent(values(commentsLength)))
+    .interpolate(d3.interpolateHcl)
+    .range([d3.rgb('#e4f5b5'), d3.rgb('#1e3489')]);
 
-let min = 1;
-let max = 0;
-for (let i = 0; i < languageElmts.length; i += 1) {
-  for (let j = 0; j < languageElmts.length; j += 1) {
-    const rowLanguage = languageElmts[i].dataset.subreddit;
-    const colLanguage = languageElmts[j].dataset.subreddit;
+  const bars = document.getElementById('comments-length-bars');
+  for (let i = 0; i < languageElmts.length; i += 1) {
+    const language = languageElmts[i].dataset.subreddit;
 
-    if (i !== j) {
-      max = Math.max(max, usersInCommon[rowLanguage][colLanguage]);
-      min = Math.min(min, usersInCommon[rowLanguage][colLanguage]);
-    }
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.height = `${barHeightScale(commentsLength[language])}px`;
+    const background = (d3.color(barFillColor(commentsLength[language])));
+    background.opacity = 0.7;
+    bar.style.background = background + '';
+    bar.innerHTML = `<span>${Math.round(commentsLength[language])}</span>`;
+
+    bars.appendChild(bar);
   }
-}
+}());
 
-const fillColor = d3.scaleLinear().domain([min, max])
-  .interpolate(d3.interpolateHcl)
-  .range([d3.rgb('#e4f5b5'), d3.rgb('#1e3489')]);
+(function drawSubmissionsScores() {
+  const submissionsScoresElmt = document.getElementById('submissions-scores');
 
-for (let i = 0; i < languageElmts.length; i += 1) {
-  for (let j = 0; j < languageElmts.length; j += 1) {
-    const rowLanguage = languageElmts[i].dataset.subreddit;
-    const colLanguage = languageElmts[j].dataset.subreddit;
-
-    matrixElmts[i][j].style.height = `${matrixElmts[i][j].offsetWidth}px`;
-
-    if (i !== j) {
-      matrixElmts[i][j].style.background = fillColor(usersInCommon[rowLanguage][colLanguage]);
-    }
+  for (let i = 0; i < submissionsScoresElmt.children.length; i += 1) {
+    const language = submissionsScoresElmt.children[i];
+    language.style.height = `${language.offsetWidth}px`;
   }
-}
 
-rowLanguages.forEach((l) => {
-  l.style.height = `${l.offsetWidth}px`;
-});
+  const barHeightScale = d3.scaleLinear().domain([0, d3.max(values(submissionsScores))])
+    .range([0, 200]);
 
-columnLanguages.forEach((l) => {
-  l.style.height = `${l.offsetWidth}px`;
-});
+  const barFillColor = d3.scaleLinear().domain(d3.extent(values(submissionsScores)))
+    .interpolate(d3.interpolateHcl)
+    .range([d3.rgb('#e4f5b5'), d3.rgb('#1e3489')]);
 
-const commentsLengthElmt = document.getElementById('comments-length');
+  const bars = document.getElementById('submissions-scores-bars');
+  for (let i = 0; i < languageElmts.length; i += 1) {
+    const language = languageElmts[i].dataset.subreddit;
 
-for (let i = 0; i < commentsLengthElmt.children.length; i += 1) {
-  const language = commentsLengthElmt.children[i];
-  language.style.height = `${language.offsetWidth}px`;
-}
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.height = `${barHeightScale(submissionsScores[language])}px`;
+    const background = (d3.color(barFillColor(submissionsScores[language])));
+    background.opacity = 0.7;
+    bar.style.background = background + '';
+    bar.innerHTML = `<span>${Math.round(submissionsScores[language])}</span>`;
 
-const barHeightScale = d3.scaleLinear().domain([0, d3.max(values(commentsLength))])
-  .range([0, 200]);
-
-const barFillColor = d3.scaleLinear().domain(d3.extent(values(commentsLength)))
-  .interpolate(d3.interpolateHcl)
-  .range([d3.rgb('#e4f5b5'), d3.rgb('#1e3489')]);
-
-const bars = document.getElementById('comments-length-bars');
-for (let i = 0; i < languageElmts.length; i += 1) {
-  const language = languageElmts[i].dataset.subreddit;
-
-  const bar = document.createElement('div');
-  bar.className = 'bar';
-  bar.style.height = `${barHeightScale(commentsLength[language])}px`;
-  const background = (d3.color(barFillColor(commentsLength[language])));
-  background.opacity = 0.7;
-  bar.style.background = background + '';
-
-  bars.appendChild(bar);
-}
+    bars.appendChild(bar);
+  }
+}());
